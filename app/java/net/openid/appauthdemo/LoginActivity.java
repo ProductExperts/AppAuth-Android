@@ -39,6 +39,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.browser.customtabs.CustomTabsCallback;
 import androidx.browser.customtabs.CustomTabsIntent;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -55,6 +56,7 @@ import net.openid.appauth.ResponseTypeValues;
 import net.openid.appauth.browser.AnyBrowserMatcher;
 import net.openid.appauth.browser.BrowserMatcher;
 import net.openid.appauth.browser.ExactBrowserMatcher;
+import net.openid.appauth.browser.VersionedBrowserMatcher;
 import net.openid.appauthdemo.BrowserSelectionAdapter.BrowserInfo;
 
 import java.util.Collections;
@@ -98,7 +100,7 @@ public final class LoginActivity extends AppCompatActivity {
     private boolean mUsePendingIntents;
 
     @NonNull
-    private BrowserMatcher mBrowserMatcher = AnyBrowserMatcher.INSTANCE;
+    private BrowserMatcher mBrowserMatcher = VersionedBrowserMatcher.CHROME_CUSTOM_TAB;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -215,8 +217,7 @@ public final class LoginActivity extends AppCompatActivity {
             Log.i(TAG, "Creating auth config from res/raw/auth_config.json");
             AuthorizationServiceConfiguration config = new AuthorizationServiceConfiguration(
                     mConfiguration.getAuthEndpointUri(),
-                    mConfiguration.getTokenEndpointUri(),
-                    mConfiguration.getRegistrationEndpointUri());
+                    mConfiguration.getTokenEndpointUri());
 
             mAuthStateManager.replace(new AuthState(config));
             initializeClient();
@@ -460,8 +461,46 @@ public final class LoginActivity extends AppCompatActivity {
         mExecutor.execute(() -> {
             Log.i(TAG, "Warming up browser instance for auth request");
             CustomTabsIntent.Builder intentBuilder =
-                    mAuthService.createCustomTabsIntentBuilder(mAuthRequest.get().toUri());
+                    mAuthService.createCustomTabsIntentBuilder(new CustomTabsCallback(){
+                        private void dumpExtras(Bundle extras){
+                            if (extras != null){
+                                for (String key: extras.keySet())
+                                {
+                                    Log.d ("myApplication", key + " is a key in the bundle");
+                                }
+                            }
+                        }
+                        @Override
+                        public void onNavigationEvent(int navigationEvent, @Nullable Bundle extras) {
+                            Log.d ("myApplication", "onNavigationEvent : " + navigationEvent );
+                            dumpExtras(extras);
+                            super.onNavigationEvent(navigationEvent, extras);
+
+
+                        }
+
+                        @Override
+                        public void extraCallback(@NonNull String callbackName, @Nullable Bundle args) {
+                            Log.d ("myApplication", "extraCallback : " + callbackName );
+                            dumpExtras(args);
+                            super.extraCallback(callbackName, args);
+                        }
+
+                        @Nullable
+                        @Override
+                        public Bundle extraCallbackWithResult(@NonNull String callbackName, @Nullable Bundle args) {
+                            Log.d ("myApplication", "extraCallbackWithResult : " + callbackName );
+                            dumpExtras(args);
+                            return super.extraCallbackWithResult(callbackName, args);
+                        }
+
+                        @Override
+                        public void onPostMessage(@NonNull String message, @Nullable Bundle extras) {
+                            super.onPostMessage(message, extras);
+                        }
+                    }, mAuthRequest.get().toUri());
             intentBuilder.setToolbarColor(getColorCompat(R.color.colorPrimary));
+
             mAuthIntent.set(intentBuilder.build());
             mAuthIntentLatch.countDown();
         });
@@ -474,7 +513,9 @@ public final class LoginActivity extends AppCompatActivity {
                 mClientId.get(),
                 ResponseTypeValues.CODE,
                 mConfiguration.getRedirectUri())
-                .setScope(mConfiguration.getScope());
+            .setCodeVerifier(null)
+                .setScope(mConfiguration.getScope())
+            .setState("https://staging.lively.studio/mobile/host/login");
 
         if (!TextUtils.isEmpty(loginHint)) {
             authRequestBuilder.setLoginHint(loginHint);

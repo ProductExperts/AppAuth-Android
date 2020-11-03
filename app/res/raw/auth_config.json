@@ -1,11 +1,10 @@
 {
-  "client_id": "",
-  "redirect_uri": "net.openid.appauthdemo:/oauth2redirect",
+  "redirect_uri": "https://lively.studio/redirect.html",
   "authorization_scope": "openid email profile",
   "discovery_uri": "",
-  "authorization_endpoint_uri": "",
-  "token_endpoint_uri": "",
+  "authorization_endpoint_uri": "https://zoom.us/oauth/authorize",
+  "token_endpoint_uri": "https://staging.lively.studio/v1/token",
   "registration_endpoint_uri": "",
-  "user_info_endpoint_uri": "",
+  "user_info_endpoint_uri": "https://zoom.us/v2/users/me",
   "https_required": true
 }

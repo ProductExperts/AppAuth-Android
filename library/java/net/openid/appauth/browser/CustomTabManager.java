@@ -110,9 +110,11 @@ public class CustomTabManager {
      */
     @WorkerThread
     @NonNull
-    public CustomTabsIntent.Builder createTabBuilder(@Nullable Uri... possibleUris) {
-        return new CustomTabsIntent.Builder(createSession(null, possibleUris));
+    public CustomTabsIntent.Builder createTabBuilder(@Nullable CustomTabsCallback callback, @Nullable Uri... possibleUris) {
+        return new CustomTabsIntent.Builder(createSession(callback, possibleUris));
     }
+
+
 
     public synchronized void dispose() {
         if (mConnection == null) {

@@ -29,7 +29,9 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import androidx.browser.customtabs.CustomTabsCallback;
 import androidx.browser.customtabs.CustomTabsIntent;
+import androidx.browser.customtabs.CustomTabsSession;
 
 import net.openid.appauth.AuthorizationException.GeneralErrors;
 import net.openid.appauth.AuthorizationException.RegistrationRequestErrors;
@@ -133,9 +135,9 @@ public class AuthorizationService {
      * Creates a custom tab builder, that will use a tab session from an existing connection to
      * a web browser, if available.
      */
-    public CustomTabsIntent.Builder createCustomTabsIntentBuilder(Uri... possibleUris) {
+    public CustomTabsIntent.Builder createCustomTabsIntentBuilder(CustomTabsCallback callback, Uri... possibleUris) {
         checkNotDisposed();
-        return mCustomTabManager.createTabBuilder(possibleUris);
+        return mCustomTabManager.createTabBuilder(callback, possibleUris);
     }
 
     /**
@@ -154,7 +156,7 @@ public class AuthorizationService {
                 request,
                 completedIntent,
                 null,
-                createCustomTabsIntentBuilder().build());
+                createCustomTabsIntentBuilder(null).build());
     }
 
     /**
@@ -175,7 +177,7 @@ public class AuthorizationService {
                 request,
                 completedIntent,
                 canceledIntent,
-                createCustomTabsIntentBuilder().build());
+                createCustomTabsIntentBuilder(null).build());
     }
 
     /**
@@ -293,7 +295,7 @@ public class AuthorizationService {
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public Intent getAuthorizationRequestIntent(
             @NonNull AuthorizationRequest request) {
-        return getAuthorizationRequestIntent(request, createCustomTabsIntentBuilder().build());
+        return getAuthorizationRequestIntent(request, createCustomTabsIntentBuilder(null).build());
     }
 
     /**
